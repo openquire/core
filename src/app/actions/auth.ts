@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 export async function signInWithGoogle() {
   const supabase = await createClient()
   
-  // Get the base URL from environment or default to localhost
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  // Get the base URL from environment, Vercel URL, or default to localhost
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
