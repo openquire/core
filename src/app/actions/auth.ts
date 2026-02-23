@@ -1,21 +1,25 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 
 export async function signInWithGoogle() {
   const supabase = await createClient()
   
-  // Get the base URL from environment, Vercel URL, or default to localhost
-  let baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+  // Get the host from request headers (most reliable)
+  const headersList = await headers()
+  const host = headersList.get('host')
+  const protocol = headersList.get('x-forwarded-proto') || 'https'
   
-  if (!baseUrl) {
-    // VERCEL_URL doesn't include protocol
-    const vercelUrl = process.env.VERCEL_URL
-    if (vercelUrl) {
-      baseUrl = vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`
-    } else {
-      baseUrl = 'http://localhost:3000'
-    }
+  // Build the base URL from the actual request
+  let baseUrl: string
+  
+  if (host) {
+    baseUrl = `${protocol}://${host}`
+  } else {
+    // Fallback to environment variables
+    baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
   }
   
   // Ensure baseUrl has protocol
