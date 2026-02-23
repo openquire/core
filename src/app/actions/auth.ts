@@ -6,13 +6,30 @@ export async function signInWithGoogle() {
   const supabase = await createClient()
   
   // Get the base URL from environment, Vercel URL, or default to localhost
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  let baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+  
+  if (!baseUrl) {
+    // VERCEL_URL doesn't include protocol
+    const vercelUrl = process.env.VERCEL_URL
+    if (vercelUrl) {
+      baseUrl = vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`
+    } else {
+      baseUrl = 'http://localhost:3000'
+    }
+  }
+  
+  // Ensure baseUrl has protocol
+  if (!baseUrl.startsWith('http')) {
+    baseUrl = `https://${baseUrl}`
+  }
+  
+  const redirectUrl = `${baseUrl}/auth/callback`
+  console.log('OAuth redirect URL:', redirectUrl)
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${baseUrl}/auth/callback`,
+      redirectTo: redirectUrl,
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
