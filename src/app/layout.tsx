@@ -14,8 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Notes - Privacy-focused note-taking",
-  description: "A simple, privacy-focused note-taking application",
+  title: "openQuire - Beautiful Note-Taking",
+  description: "A beautiful, privacy-focused note-taking app that helps you capture and organize your ideas with ease.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

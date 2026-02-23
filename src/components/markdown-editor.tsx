@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Save, Type, List, ListOrdered, Quote, Code, Bold, Italic } from 'lucide-react';
+import { Save, Type, List, ListOrdered, Quote, Code, Bold, Italic, FileText, Sparkles } from 'lucide-react';
+import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 
 interface Note {
@@ -476,27 +477,34 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
 
   if (!note) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="text-center text-muted-foreground">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mx-auto mb-4 opacity-50"
-          >
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" x2="8" y1="13" y2="13" />
-            <line x1="16" x2="8" y1="17" y2="17" />
-            <line x1="10" x2="8" y1="9" y2="9" />
-          </svg>
-          <p className="text-lg">Select a note or create a new one</p>
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="text-center max-w-md px-8">
+          {/* Decorative background */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[#3B7EF4]/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-[#96D9A5]/10 rounded-full blur-3xl" />
+          </div>
+          
+          <div className="relative">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-xl" style={{
+              background: 'linear-gradient(to top right, #3B7EF4, #96D9A5)'
+            }}>
+              <FileText className="h-12 w-12 text-white" />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-foreground mb-3">
+              Welcome to <Logo size="sm" className="inline-flex" />
+            </h2>
+            
+            <p className="text-muted-foreground mb-6">
+              Select a note from the sidebar or create a new one to start writing your thoughts.
+            </p>
+            
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Sparkles className="h-4 w-4 text-[#96D9A5]" />
+              <span>Type <kbd className="px-2 py-0.5 rounded bg-muted border border-border text-xs font-mono">/</kbd> for formatting commands</span>
+            </div>
+          </div>
         </div>
       </div>
     );

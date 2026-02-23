@@ -10,7 +10,9 @@ import {
   LogOut,
   Menu,
   X,
+  Search,
 } from 'lucide-react'
+import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -172,13 +174,10 @@ export function NotesSidebar({
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        {/* Header */}
+        {/* Header with Logo */}
         <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Notes
-            </h1>
+          <div className="flex items-center justify-between mb-4">
+            <Logo size="sm" />
             <Button
               variant="ghost"
               size="icon"
@@ -188,29 +187,44 @@ export function NotesSidebar({
               <X className="h-4 w-4" />
             </Button>
           </div>
+          
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search notes..."
+              className="w-full pl-9 pr-3 py-2 text-sm bg-muted/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3B7EF4]/30 focus:border-[#3B7EF4]/50 transition-all"
+            />
+          </div>
         </div>
 
         {/* New note button */}
-        <div className="p-2">
+        <div className="p-3">
           <Button
             onClick={() => {
               onCreateNote()
               setIsOpen(false)
             }}
             disabled={isCreating}
-            className="w-full justify-start gap-2"
-            variant="outline"
+            className="w-full justify-start gap-2 text-white shadow-md transition-all duration-200"
+            style={{
+              background: 'linear-gradient(to top right, #3B7EF4, #96D9A5)'
+            }}
           >
             <Plus className="h-4 w-4" />
             New Note
           </Button>
         </div>
 
-        <Separator />
-
         {/* Notes list */}
         <ScrollArea className="flex-1">
-          <div className="space-y-1 p-2">
+          <div className="px-3 pb-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+              Your Notes
+            </p>
+          </div>
+          <div className="space-y-1 px-3">
             {notes.map((note) => (
               <NoteItem
                 key={note.id}
@@ -221,20 +235,22 @@ export function NotesSidebar({
               />
             ))}
             {notes.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                No notes yet
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                  <FileText className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <p className="text-muted-foreground text-sm mb-1">No notes yet</p>
+                <p className="text-muted-foreground/70 text-xs">Create your first note to get started</p>
               </div>
             )}
           </div>
         </ScrollArea>
 
-        <Separator />
-
         {/* Footer */}
-        <div className="p-2">
+        <div className="p-3 border-t border-sidebar-border">
           <Button
             variant="ghost"
-            className="w-full justify-start gap-2 text-muted-foreground"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50"
             onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
@@ -249,7 +265,13 @@ export function NotesSidebar({
           <DialogHeader>
             <DialogTitle>Delete Note</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{noteToDelete?.title || 'Untitled'}"? This action cannot be undone.
+              {noteToDelete ? (
+                <>
+                  Are you sure you want to delete <strong>&ldquo;{noteToDelete.title || 'Untitled'}&rdquo;</strong>? This action cannot be undone.
+                </>
+              ) : (
+                'Are you sure you want to delete this note? This action cannot be undone.'
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
