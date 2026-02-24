@@ -92,19 +92,24 @@ export default function LoginPage() {
       </div>
       
       {/* Right side - Login form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-8 relative bg-linear-to-tr from-[#3B7EF4] to-[#96D9A5] lg:bg-none lg:bg-background">
+        {/* Mobile decorative elements */}
+        <div className="lg:hidden absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl opacity-10" />
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-white rounded-full blur-3xl opacity-15" />
+        </div>
+        <div className="w-full max-w-md relative z-10">
           {/* Mobile logo */}
           <div className="lg:hidden mb-12 text-center">
             <Logo size="lg" className="justify-center" />
           </div>
-          
+
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-foreground mb-2">Welcome back</h2>
-            <p className="text-muted-foreground">Sign in to continue to your notes</p>
+            <h2 className="text-2xl font-bold text-white lg:text-foreground mb-2">Welcome back</h2>
+            <p className="text-white/80 lg:text-muted-foreground">Sign in to continue to your notes</p>
           </div>
           
-          <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
+          <div className="bg-white/20 backdrop-blur-sm border border-white/30 lg:bg-card lg:border-border rounded-2xl p-8 shadow-sm lg:backdrop-blur-none">
             <Button
               onClick={handleSignIn}
               disabled={isLoading}
@@ -163,11 +168,11 @@ export default function LoginPage() {
             </Button>
             
             <div className="mt-6 text-center">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-white/70 lg:text-muted-foreground">
                 By signing in, you agree to our{' '}
-                <span className="text-[#3B7EF4] hover:underline cursor-pointer">Terms of Service</span>
+                <span className="text-white lg:text-[#3B7EF4] hover:underline cursor-pointer">Terms of Service</span>
                 {' '}and{' '}
-                <span className="text-[#3B7EF4] hover:underline cursor-pointer">Privacy Policy</span>
+                <span className="text-white lg:text-[#3B7EF4] hover:underline cursor-pointer">Privacy Policy</span>
               </p>
             </div>
           </div>
@@ -175,16 +180,16 @@ export default function LoginPage() {
           {/* App features for mobile */}
           <div className="lg:hidden mt-8 grid grid-cols-3 gap-4 text-center">
             <div className="p-3">
-              <Zap className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Fast</span>
+              <Zap className="h-5 w-5 mx-auto mb-2 text-white/80" />
+              <span className="text-xs text-white/80">Fast</span>
             </div>
             <div className="p-3">
-              <Shield className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Secure</span>
+              <Shield className="h-5 w-5 mx-auto mb-2 text-white/80" />
+              <span className="text-xs text-white/80">Secure</span>
             </div>
             <div className="p-3">
-              <Sparkles className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Beautiful</span>
+              <Sparkles className="h-5 w-5 mx-auto mb-2 text-white/80" />
+              <span className="text-xs text-white/80">Beautiful</span>
             </div>
           </div>
         </div>

@@ -493,7 +493,7 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
             </div>
             
             <h2 className="text-2xl font-bold text-foreground mb-3">
-              Welcome to <Logo size="sm" className="inline-flex" />
+              Welcome to <Logo size="sm" variant="dark" className="inline-flex" />
             </h2>
             
             <p className="text-muted-foreground mb-6">
@@ -512,7 +512,7 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
 
   return (
     <div className="flex-1 flex flex-col bg-background">
-      <div className="border-b border-border p-4">
+      <div className="border-b border-border p-4 pl-14 lg:pl-4">
         <div className="flex items-center justify-between gap-4">
           <input
             type="text"

@@ -177,7 +177,7 @@ export function NotesSidebar({
         {/* Header with Logo */}
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center justify-between mb-4">
-            <Logo size="sm" />
+            <Logo size="sm" variant="dark" />
             <Button
               variant="ghost"
               size="icon"

@@ -7,9 +7,10 @@ interface LogoProps {
   className?: string
   iconOnly?: boolean
   size?: 'sm' | 'md' | 'lg'
+  variant?: 'light' | 'dark'
 }
 
-export function Logo({ className, iconOnly = false, size = 'md' }: LogoProps) {
+export function Logo({ className, iconOnly = false, size = 'md', variant = 'light' }: LogoProps) {
   const sizes = {
     sm: { icon: 'h-6 w-6', text: 'text-lg', container: 'h-6' },
     md: { icon: 'h-8 w-8', text: 'text-xl', container: 'h-8' },
@@ -32,10 +33,13 @@ export function Logo({ className, iconOnly = false, size = 'md' }: LogoProps) {
       {/* App Name */}
       {!iconOnly && (
         <span className={cn('font-bold tracking-tight', sizes[size].text)}>
-          <span className="bg-gradient-to-r from-[#3B7EF4] to-[#5CB85C] bg-clip-text text-white">
+          <span className={cn(
+            'bg-gradient-to-r from-[#3B7EF4] to-[#5CB85C] bg-clip-text',
+            variant === 'dark' ? 'text-transparent' : 'text-white'
+          )}>
             open
           </span>
-          <span className="text-white">Quire</span>
+          <span className={variant === 'dark' ? 'text-foreground' : 'text-white'}>Quire</span>
         </span>
       )}
     </div>
