@@ -2,8 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Skip middleware for auth callback route
-  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+  // Skip middleware for auth routes (callback, email confirm)
+  if (request.nextUrl.pathname.startsWith('/auth/')) {
     return NextResponse.next()
   }
 
