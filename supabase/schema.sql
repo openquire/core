@@ -69,11 +69,58 @@ CREATE TRIGGER handle_notes_updated_at
   EXECUTE FUNCTION handle_updated_at();
 
 -- ============================================
+-- Image Storage Bucket & Security Setup
+-- ============================================
+
+-- Create the storage bucket for note images
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'note-images',
+  'note-images',
+  true,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+);
+
+-- Users can upload images to their own folder
+CREATE POLICY "Users can upload own images"
+  ON storage.objects
+  FOR INSERT
+  WITH CHECK (
+    bucket_id = 'note-images'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Anyone can view images (public bucket for img src access)
+CREATE POLICY "Public read access for note images"
+  ON storage.objects
+  FOR SELECT
+  USING (bucket_id = 'note-images');
+
+-- Users can delete their own images
+CREATE POLICY "Users can delete own images"
+  ON storage.objects
+  FOR DELETE
+  USING (
+    bucket_id = 'note-images'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Users can update (overwrite) their own images
+CREATE POLICY "Users can update own images"
+  ON storage.objects
+  FOR UPDATE
+  USING (
+    bucket_id = 'note-images'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- ============================================
 -- Verification Queries (run these to test)
 -- ============================================
 -- Check if RLS is enabled:
 -- SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';
 
 -- Check policies:
--- SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
+-- SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
 -- FROM pg_policies WHERE tablename = 'notes';

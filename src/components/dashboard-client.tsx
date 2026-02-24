@@ -78,6 +78,7 @@ export function DashboardClient({ initialNotes, userId }: DashboardClientProps) 
       <MarkdownEditor
         note={selectedNote}
         onSave={handleSaveNote}
+        userId={userId}
       />
     </div>
   )

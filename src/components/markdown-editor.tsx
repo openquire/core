@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Save, Type, List, ListOrdered, Quote, Code, Bold, Italic, FileText, Sparkles } from 'lucide-react';
+import { Save, Type, List, ListOrdered, Quote, Code, Bold, Italic, FileText, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
+import { uploadImage, validateImageFile } from '@/lib/upload-image';
 
 interface Note {
   id: string;
@@ -17,6 +18,7 @@ interface Note {
 interface MarkdownEditorProps {
   note: Note | null;
   onSave: (id: string, updates: { title: string; content: string }) => Promise<void>;
+  userId: string;
 }
 
 interface SlashCommand {
@@ -24,6 +26,7 @@ interface SlashCommand {
   icon: React.ReactNode;
   description: string;
   action: () => { prefix: string; suffix: string };
+  isCustom?: boolean;
 }
 
 const slashCommands: SlashCommand[] = [
@@ -81,9 +84,16 @@ const slashCommands: SlashCommand[] = [
     description: 'Italic text',
     action: () => ({ prefix: '<em>', suffix: '</em>' }),
   },
+  {
+    label: 'Image',
+    icon: <ImageIcon className="h-4 w-4" />,
+    description: 'Upload an image',
+    action: () => ({ prefix: '', suffix: '' }),
+    isCustom: true,
+  },
 ];
 
-export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
+export default function MarkdownEditor({ note, onSave, userId }: MarkdownEditorProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -91,7 +101,10 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
   const [slashFilter, setSlashFilter] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInsertRangeRef = useRef<Range | null>(null);
 
   // Store the selection range when slash menu is shown so clicks don't lose it
   const savedRangeRef = useRef<Range | null>(null);
@@ -124,7 +137,7 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
   }, [title, content, note]);
 
   const handleSave = useCallback(async () => {
-    if (!note || !hasChanges) return;
+    if (!note || !hasChanges || isUploading) return;
     setIsSaving(true);
     try {
       await onSave(note.id, { title, content });
@@ -134,7 +147,7 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
     } finally {
       setIsSaving(false);
     }
-  }, [note, hasChanges, title, content, onSave]);
+  }, [note, hasChanges, isUploading, title, content, onSave]);
 
   // Auto-save after 2 seconds
   useEffect(() => {
@@ -158,9 +171,112 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
     };
   };
 
+  // Remove the /slash text from the editor and return cursor position info
+  const removeSlashText = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    if (savedRangeRef.current) {
+      selection.removeAllRanges();
+      selection.addRange(savedRangeRef.current);
+      savedRangeRef.current = null;
+    }
+
+    if (selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const textNode = range.startContainer;
+    if (textNode.nodeType !== Node.TEXT_NODE) return;
+
+    const text = textNode.textContent || '';
+    const cursorPos = range.startOffset;
+    const beforeCursor = text.substring(0, cursorPos);
+    const slashIndex = beforeCursor.lastIndexOf('/');
+    if (slashIndex === -1) return;
+
+    const beforeText = text.substring(0, slashIndex);
+    const afterText = text.substring(cursorPos);
+    textNode.textContent = beforeText + afterText;
+
+    const newRange = document.createRange();
+    newRange.setStart(textNode, slashIndex);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
+    imageInsertRangeRef.current = newRange.cloneRange();
+  }, []);
+
+  // Upload a file and insert the resulting image into the editor
+  const handleImageUpload = useCallback(async (file: File) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const placeholderId = `img-placeholder-${Date.now()}`;
+    const placeholder = document.createElement('div');
+    placeholder.id = placeholderId;
+    placeholder.contentEditable = 'false';
+    placeholder.className = 'inline-flex items-center gap-2 px-3 py-2 my-2 bg-muted rounded-lg text-sm text-muted-foreground';
+    placeholder.innerHTML = `
+      <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      Uploading image...
+    `;
+
+    if (imageInsertRangeRef.current) {
+      imageInsertRangeRef.current.insertNode(placeholder);
+      imageInsertRangeRef.current.setStartAfter(placeholder);
+      imageInsertRangeRef.current.collapse(true);
+    } else {
+      editor.appendChild(placeholder);
+    }
+
+    setContent(editor.innerHTML);
+    setIsUploading(true);
+
+    try {
+      const result = await uploadImage(file, userId);
+
+      const existingPlaceholder = editor.querySelector(`#${placeholderId}`);
+      if (existingPlaceholder) {
+        const img = document.createElement('img');
+        img.src = result.url;
+        img.alt = file.name.replace(/"/g, '');
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        img.style.borderRadius = '8px';
+        img.style.margin = '8px 0';
+        img.style.display = 'block';
+        existingPlaceholder.replaceWith(img);
+      }
+
+      setContent(editor.innerHTML);
+    } catch (error) {
+      const existingPlaceholder = editor.querySelector(`#${placeholderId}`);
+      existingPlaceholder?.remove();
+      setContent(editor.innerHTML);
+      alert(error instanceof Error ? error.message : 'Failed to upload image');
+    } finally {
+      setIsUploading(false);
+      imageInsertRangeRef.current = null;
+    }
+  }, [userId]);
+
   const insertSlashCommand = useCallback((command: SlashCommand) => {
     const editor = editorRef.current;
     if (!editor) return;
+
+    // Handle custom commands (e.g., Image upload)
+    if (command.isCustom && command.label === 'Image') {
+      removeSlashText();
+      setShowSlashMenu(false);
+      setSlashFilter('');
+      setContent(editor.innerHTML);
+      fileInputRef.current?.click();
+      return;
+    }
 
     const selection = window.getSelection();
     if (!selection) return;
@@ -291,7 +407,7 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
     setSlashFilter('');
     setContent(editor.innerHTML);
     editor.focus();
-  }, []);
+  }, [removeSlashText]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Exit block elements (code block, blockquote) on Enter when at the end
@@ -457,11 +573,48 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
     setSlashFilter('');
   };
 
-  const handlePaste = (e: React.ClipboardEvent) => {
+  const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    await handleImageUpload(file);
+  }, [handleImageUpload]);
+
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+
+    if (imageItem) {
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (!file) return;
+
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        imageInsertRangeRef.current = selection.getRangeAt(0).cloneRange();
+      }
+
+      await handleImageUpload(file);
+      return;
+    }
+
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);
-  };
+  }, [handleImageUpload]);
 
   // Close slash menu when clicking outside
   useEffect(() => {
@@ -536,6 +689,14 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
         )}
       </div>
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        className="hidden"
+        onChange={handleImageSelect}
+      />
+
       <div className="flex-1 p-4 relative overflow-auto">
         <div
           ref={editorRef}
@@ -557,6 +718,7 @@ export default function MarkdownEditor({ note, onSave }: MarkdownEditorProps) {
             '[&>pre]:bg-muted [&>pre]:p-4 [&>pre]:rounded-lg [&>pre]:overflow-x-auto',
             '[&>strong]:font-bold',
             '[&>em]:italic',
+            '[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-2',
             'before:text-muted-foreground before:pointer-events-none',
             'empty:before:content-[attr(data-placeholder)]'
           )}
