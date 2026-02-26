@@ -80,7 +80,7 @@ export function AppSidebar({
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/20 z-40 lg:hidden cursor-pointer"
           onClick={() => setIsOpen(false)}
         />
       )}
