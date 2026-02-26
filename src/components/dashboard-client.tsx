@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Workspace, PageWithTags, Tag } from '@/types/database'
 import { createPage, updatePage, deletePage } from '@/app/actions/pages'
+import { updateWorkspace } from '@/app/actions/workspaces'
 import { buildPageTree } from '@/lib/page-tree'
 import { syncTagsFromContent, removeTagFromPage } from '@/app/actions/tags'
 import { AppSidebar } from '@/components/app-sidebar'
@@ -234,6 +235,26 @@ export function DashboardClient({
     setSearchQuery(query)
   }, [])
 
+  const handleChangePageIcon = useCallback(
+    async (pageId: string, icon: string | null) => {
+      const updated = await updatePage(pageId, { icon })
+      if (updated) {
+        setPages((prev) =>
+          prev.map((p) => (p.id === pageId ? { ...p, icon } : p))
+        )
+      }
+    },
+    []
+  )
+
+  const handleRenameWorkspace = useCallback(
+    async (workspaceId: string, name: string) => {
+      await updateWorkspace(workspaceId, { name })
+      router.refresh()
+    },
+    [router]
+  )
+
   return (
     <div className="flex h-screen bg-background">
       <AppSidebar
@@ -252,6 +273,8 @@ export function DashboardClient({
         onDeletePage={handleDeletePage}
         onToggleTag={handleToggleTag}
         onSearchChange={handleSearchChange}
+        onChangePageIcon={handleChangePageIcon}
+        onRenameWorkspace={handleRenameWorkspace}
       />
       <MarkdownEditor
         page={selectedPage}

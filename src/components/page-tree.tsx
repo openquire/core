@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ChevronRight, FileText, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { EmojiPicker } from '@/components/emoji-picker'
 import type { PageTreeNode } from '@/types/database'
 
 interface PageTreeProps {
@@ -22,6 +23,7 @@ interface PageTreeProps {
   onToggleExpand: (pageId: string) => void
   onCreateChild: (parentId: string) => void
   onDelete: (pageId: string) => void
+  onChangeIcon: (pageId: string, icon: string | null) => void
 }
 
 export function PageTree({
@@ -32,6 +34,7 @@ export function PageTree({
   onToggleExpand,
   onCreateChild,
   onDelete,
+  onChangeIcon,
 }: PageTreeProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [pageToDelete, setPageToDelete] = useState<PageTreeNode | null>(null)
@@ -66,6 +69,7 @@ export function PageTree({
             onToggleExpand={onToggleExpand}
             onCreateChild={onCreateChild}
             onDeleteClick={handleDeleteClick}
+            onChangeIcon={onChangeIcon}
           />
         ))}
         {nodes.length === 0 && (
@@ -120,6 +124,7 @@ interface PageTreeItemProps {
   onToggleExpand: (pageId: string) => void
   onCreateChild: (parentId: string) => void
   onDeleteClick: (page: PageTreeNode, e: React.MouseEvent) => void
+  onChangeIcon: (pageId: string, icon: string | null) => void
 }
 
 function PageTreeItem({
@@ -131,10 +136,24 @@ function PageTreeItem({
   onToggleExpand,
   onCreateChild,
   onDeleteClick,
+  onChangeIcon,
 }: PageTreeItemProps) {
   const isExpanded = expandedIds.has(node.id)
   const hasChildren = node.children.length > 0
   const isSelected = selectedPageId === node.id
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showEmojiPicker) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showEmojiPicker])
 
   return (
     <div>
@@ -159,7 +178,7 @@ function PageTreeItem({
             onToggleExpand(node.id)
           }}
           className={cn(
-            'flex-shrink-0 p-0.5 rounded hover:bg-muted transition-transform',
+            'shrink-0 p-0.5 rounded hover:bg-muted transition-transform',
             isExpanded && 'rotate-90',
             !hasChildren && 'invisible'
           )}
@@ -167,15 +186,38 @@ function PageTreeItem({
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
 
-        <span className="flex-shrink-0 text-sm">
-          {node.icon || <FileText className="h-4 w-4" />}
-        </span>
+        <div className="relative shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowEmojiPicker(!showEmojiPicker)
+            }}
+            className="flex items-center justify-center w-5 h-5 rounded hover:bg-muted/80 transition-colors text-sm"
+            title="Change icon"
+          >
+            {node.icon || <FileText className="h-4 w-4" />}
+          </button>
+          {showEmojiPicker && (
+            <div ref={emojiPickerRef} className="absolute top-full left-0 z-50 mt-1">
+              <EmojiPicker
+                onSelect={(emoji) => {
+                  onChangeIcon(node.id, emoji)
+                  setShowEmojiPicker(false)
+                }}
+                onRemove={node.icon ? () => {
+                  onChangeIcon(node.id, null)
+                  setShowEmojiPicker(false)
+                } : undefined}
+              />
+            </div>
+          )}
+        </div>
 
         <span className="truncate flex-1 text-sm">
           {node.title || 'Untitled'}
         </span>
 
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -211,6 +253,7 @@ function PageTreeItem({
               onToggleExpand={onToggleExpand}
               onCreateChild={onCreateChild}
               onDeleteClick={onDeleteClick}
+              onChangeIcon={onChangeIcon}
             />
           ))}
         </div>

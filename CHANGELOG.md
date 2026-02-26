@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] - 2026-02-26
+
+### Added
+- **Page Icons**: Set emoji icons on pages via an inline emoji picker in the page tree
+- **Workspace Rename**: Rename workspaces inline from the workspace selector dropdown
+
 ## [0.2.0] - 2026-02-26
 
 ### Added

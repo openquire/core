@@ -11,8 +11,9 @@ A modern note-taking app with workspaces, nested pages, and tag management. Buil
 
 ## Features
 
-- **Workspaces** — Organize your work into separate workspaces
+- **Workspaces** — Organize your work into separate workspaces with inline rename
 - **Nested Pages** — Create pages with unlimited parent/child hierarchy
+- **Page Icons** — Set custom emoji icons on any page from an inline picker
 - **Tag Management** — Tag pages with `#hashtags` inline in content; tags are auto-extracted on save
 - **Tag Search** — Filter pages by tags in the sidebar
 - **Rich Editor** — Content-editable editor with slash commands (`/heading`, `/code`, `/image`, etc.)
@@ -130,6 +131,7 @@ src/
     markdown-editor.tsx   # Rich content editor with slash commands
     workspace-selector.tsx
     page-tree.tsx         # Recursive collapsible page tree
+    emoji-picker.tsx      # Emoji icon picker for pages
     tag-filter.tsx        # Tag filter badges in sidebar
     tag-badges.tsx        # Tag display in editor header
   lib/

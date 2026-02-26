@@ -29,6 +29,8 @@ interface AppSidebarProps {
   onDeletePage: (pageId: string) => void
   onToggleTag: (tagId: string) => void
   onSearchChange: (query: string) => void
+  onChangePageIcon: (pageId: string, icon: string | null) => void
+  onRenameWorkspace: (workspaceId: string, name: string) => void
 }
 
 export function AppSidebar({
@@ -47,6 +49,8 @@ export function AppSidebar({
   onDeletePage,
   onToggleTag,
   onSearchChange,
+  onChangePageIcon,
+  onRenameWorkspace,
 }: AppSidebarProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
@@ -107,6 +111,7 @@ export function AppSidebar({
             workspaces={workspaces}
             currentWorkspace={currentWorkspace}
             userId={userId}
+            onRename={onRenameWorkspace}
           />
 
           {/* Search bar */}
@@ -171,6 +176,7 @@ export function AppSidebar({
                 setIsOpen(false)
               }}
               onDelete={onDeletePage}
+              onChangeIcon={onChangePageIcon}
             />
           </div>
         </ScrollArea>
