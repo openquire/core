@@ -6,19 +6,14 @@ import { Save, Type, List, ListOrdered, Quote, Code, Bold, Italic, FileText, Spa
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 import { uploadImage, validateImageFile } from '@/lib/upload-image';
-
-interface Note {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
+import { TagBadges } from '@/components/tag-badges';
+import type { PageWithTags } from '@/types/database';
 
 interface MarkdownEditorProps {
-  note: Note | null;
+  page: PageWithTags | null;
   onSave: (id: string, updates: { title: string; content: string }) => Promise<void>;
   userId: string;
+  onRemoveTag: (tagId: string) => void;
 }
 
 interface SlashCommand {
@@ -93,7 +88,7 @@ const slashCommands: SlashCommand[] = [
   },
 ];
 
-export default function MarkdownEditor({ note, onSave, userId }: MarkdownEditorProps) {
+export default function MarkdownEditor({ page: note, onSave, userId, onRemoveTag }: MarkdownEditorProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -650,7 +645,7 @@ export default function MarkdownEditor({ note, onSave, userId }: MarkdownEditorP
             </h2>
             
             <p className="text-muted-foreground mb-6">
-              Select a note from the sidebar or create a new one to start writing your thoughts.
+              Select a page from the sidebar or create a new one to start writing.
             </p>
             
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -687,6 +682,11 @@ export default function MarkdownEditor({ note, onSave, userId }: MarkdownEditorP
         {hasChanges && (
           <p className="text-xs text-muted-foreground mt-1">Unsaved changes</p>
         )}
+        {note && note.tags && note.tags.length > 0 && (
+          <div className="mt-2">
+            <TagBadges tags={note.tags} onRemove={onRemoveTag} />
+          </div>
+        )}
       </div>
 
       <input
@@ -705,7 +705,7 @@ export default function MarkdownEditor({ note, onSave, userId }: MarkdownEditorP
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           style={{ lineHeight: '1.7', minHeight: '300px' }}
-          data-placeholder="Start writing... Type '/' for commands"
+          data-placeholder="Start writing... Type '/' for commands, '#' for tags"
           className={cn(
             'w-full min-h-full focus:outline-none prose prose-sm max-w-none',
             '[&>h1]:text-3xl [&>h1]:font-bold [&>h1]:mb-4 [&>h1]:mt-0',

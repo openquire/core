@@ -1,40 +1,53 @@
-# Notes - Privacy-Focused Note-Taking App
+# OpenQuire
 
-A simple, privacy-focused, light-themed note-taking application built with Next.js 14+, Supabase, and shadcn/ui.
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+A modern note-taking app with workspaces, nested pages, and tag management. Built with Next.js 16, Supabase, and shadcn/ui.
 
 ## Features
 
-- 🔐 **Google OAuth Authentication** - Secure sign-in with Google
-- 📝 **CRUD Notes** - Create, read, update, and delete notes
-- 🔒 **Row Level Security** - Data is scoped securely to authenticated users
-- 📱 **Responsive Design** - Collapsible sidebar on mobile
-- 💾 **Auto-save** - Notes save automatically after 2 seconds
-- 🎨 **Minimal Light Theme** - Clean, spacious UI
+- **Workspaces** — Organize your work into separate workspaces
+- **Nested Pages** — Create pages with unlimited parent/child hierarchy
+- **Tag Management** — Tag pages with `#hashtags` inline in content; tags are auto-extracted on save
+- **Tag Search** — Filter pages by tags in the sidebar
+- **Rich Editor** — Content-editable editor with slash commands (`/heading`, `/code`, `/image`, etc.)
+- **Image Upload** — Upload images via slash command or paste from clipboard
+- **Auto-save** — Changes are saved automatically after 2 seconds of inactivity
+- **Authentication** — Google OAuth, GitHub OAuth, and email/password via Supabase Auth
+- **Row Level Security** — All data is scoped securely to authenticated users
+- **PWA** — Installable as a Progressive Web App
+- **Responsive Design** — Mobile-first with collapsible sidebar
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Backend/DB**: Supabase (PostgreSQL, Auth, Row Level Security)
-- **Icons**: Lucide React
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Language**: TypeScript
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL + Auth + Storage)
+- **UI**: [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS v4](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/)
+- **React**: v19 with React Compiler
 
 ## Getting Started
 
-### 1. Clone and Install Dependencies
+### 1. Clone and Install
 
 ```bash
+git clone <repo-url>
+cd core
 npm install
 ```
 
 ### 2. Set Up Environment Variables
 
-Copy the example environment file:
+Copy the example env file and fill in your Supabase credentials:
 
 ```bash
 cp .env.local.example .env.local
 ```
-
-Edit `.env.local` with your Supabase credentials:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
@@ -54,128 +67,108 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 1. Go to the SQL Editor in your Supabase dashboard
 2. Copy and run the contents of `supabase/schema.sql`
 
-This will create:
-- The `notes` table
-- Row Level Security policies
-- Automatic `updated_at` trigger
+This creates:
+- `workspaces` table — user workspaces
+- `pages` table — nested pages with parent/child hierarchy
+- `tags` table — user-owned tags
+- `page_tags` table — junction table linking pages to tags
+- `note-images` storage bucket for uploaded images
+- Row Level Security policies on all tables
+- Auto-update triggers for `updated_at`
 
-#### Configure Google OAuth
+> **Migrating from an older version (with `notes` table)?** Run `supabase/migration-001-workspaces.sql` instead. It creates the new tables and migrates existing notes into workspaces and pages.
 
+#### Configure Authentication
+
+**Google OAuth:**
 1. Go to Authentication > Providers in your Supabase dashboard
 2. Enable Google provider
-3. Get Google OAuth credentials from [Google Cloud Console](https://console.cloud.google.com):
-   - Create a new project or select existing
-   - Go to APIs & Services > Credentials
+3. Get OAuth credentials from [Google Cloud Console](https://console.cloud.google.com):
    - Create OAuth 2.0 Client ID
    - Add authorized JavaScript origins: `http://localhost:3000` (and your production URL)
    - Add authorized redirect URIs: `https://<your-project-ref>.supabase.co/auth/v1/callback`
 4. Copy the Client ID and Client Secret to Supabase
 
-#### Configure Redirect URLs in Supabase
+**GitHub OAuth:**
+1. Enable GitHub provider in Supabase Authentication > Providers
+2. Create an OAuth App in GitHub Settings > Developer Settings
+3. Set the callback URL to `https://<your-project-ref>.supabase.co/auth/v1/callback`
 
-**Important**: You must configure the allowed redirect URLs in Supabase:
-
+**Redirect URLs:**
 1. Go to Authentication > URL Configuration in your Supabase dashboard
-2. Add the following URLs:
-   - Site URL: `http://localhost:3000`
-   - Redirect URLs: `http://localhost:3000/auth/callback`
-3. For production, add your production URLs
+2. Set Site URL: `http://localhost:3000`
+3. Add Redirect URLs: `http://localhost:3000/auth/callback`
 
-**Troubleshooting OAuth Issues**:
-
-If you're being redirected back to login after authentication:
-- Verify the redirect URL in Supabase Dashboard > Authentication > URL Configuration
-- Check browser console for errors
-- Ensure cookies are not blocked by your browser
-- Verify your `.env.local` has the correct `NEXT_PUBLIC_SITE_URL`
-
-### 4. Run the Development Server
+### 4. Run the Dev Server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Project Structure
 
 ```
 src/
-├── app/
-│   ├── actions/
-│   │   ├── auth.ts       # Server actions for authentication
-│   │   └── notes.ts      # Server actions for CRUD operations
-│   ├── auth/
-│   │   └── callback/
-│   │       └── route.ts  # OAuth callback handler
-│   ├── dashboard/
-│   │   └── page.tsx      # Main dashboard page
-│   ├── login/
-│   │   └── page.tsx      # Login page
-│   ├── globals.css       # Global styles
-│   ├── layout.tsx        # Root layout
-│   └── page.tsx          # Root redirect
-├── components/
-│   ├── ui/               # shadcn/ui components
-│   ├── dashboard-client.tsx
-│   ├── note-editor.tsx
-│   └── notes-sidebar.tsx
-├── hooks/
-│   └── use-mobile.ts     # Mobile detection hook
-├── lib/
-│   ├── supabase/
-│   │   ├── browser.ts    # Browser client
-│   │   └── server.ts     # Server client
-│   └── utils.ts          # Utility functions
-├── types/
-│   └── database.ts       # TypeScript types
-└── middleware.ts         # Route protection middleware
+  app/
+    actions/              # Server actions
+      auth.ts             # Authentication (OAuth, email)
+      workspaces.ts       # Workspace CRUD
+      pages.ts            # Page CRUD, search, tag filtering
+      tags.ts             # Tag CRUD, sync from content
+    auth/                 # Auth callback & confirmation routes
+    dashboard/
+      page.tsx            # Redirects to default workspace
+      [workspaceId]/
+        page.tsx          # Main workspace view
+    login/                # Login page
+  components/
+    ui/                   # shadcn/ui primitives
+    app-sidebar.tsx       # Sidebar (workspace selector, page tree, tags)
+    dashboard-client.tsx  # Client-side state management hub
+    markdown-editor.tsx   # Rich content editor with slash commands
+    workspace-selector.tsx
+    page-tree.tsx         # Recursive collapsible page tree
+    tag-filter.tsx        # Tag filter badges in sidebar
+    tag-badges.tsx        # Tag display in editor header
+  lib/
+    supabase/             # Supabase client setup (browser + server)
+    page-tree.ts          # Page tree builder utility
+    upload-image.ts       # Image upload to Supabase Storage
+    utils.ts              # cn() utility
+  types/
+    database.ts           # TypeScript types for all tables
+  middleware.ts           # Auth route protection
+supabase/
+  schema.sql              # Full database schema (fresh install)
+  migration-001-workspaces.sql  # Migration from notes to workspaces+pages
 ```
 
 ## Database Schema
 
-### Notes Table
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `user_id` | UUID | Reference to auth.users |
-| `title` | TEXT | Note title (default: 'Untitled') |
-| `content` | TEXT | Note content |
-| `created_at` | TIMESTAMPTZ | Creation timestamp |
-| `updated_at` | TIMESTAMPTZ | Last update timestamp |
-
-### Row Level Security
-
-The following policies are implemented:
-
-- **SELECT**: Users can only view their own notes
-- **INSERT**: Users can only insert notes with their own user_id
-- **UPDATE**: Users can only update their own notes
-- **DELETE**: Users can only delete their own notes
-
-## Security Considerations
-
-- Never expose the `service_role` key in client-side code
-- All data is scoped to authenticated users via RLS
-- Middleware protects all routes requiring authentication
-- OAuth callback properly exchanges codes for sessions
-
-## Development
-
-```bash
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Run linting
-npm run lint
 ```
+workspaces (id, user_id, name, icon, sort_order)
+  |
+  +-- pages (id, workspace_id, user_id, parent_id, title, content, icon, sort_order, is_archived)
+  |     |
+  |     +-- pages (nested via parent_id self-reference)
+  |
+tags (id, user_id, name, color)
+  |
+  +-- page_tags (page_id, tag_id) -- junction table
+```
+
+All tables use Row Level Security so users can only access their own data.
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
 
 ## Deployment
 
@@ -188,13 +181,18 @@ npm run lint
 
 ### Self-Hosted
 
-1. Build the application: `npm run build`
-2. Start the server: `npm start`
+1. Build: `npm run build`
+2. Start: `npm start`
 
-Remember to:
-- Update `NEXT_PUBLIC_SITE_URL` for production
-- Update Google OAuth redirect URIs
-- Update Supabase allowed URLs
+Remember to update `NEXT_PUBLIC_SITE_URL`, OAuth redirect URIs, and Supabase allowed URLs for production.
+
+## Security
+
+- All data is scoped to authenticated users via Row Level Security
+- Never expose the `service_role` key in client-side code
+- Middleware protects all dashboard routes
+- OAuth callbacks properly exchange codes for sessions
+- Image uploads are scoped to user folders
 
 ## License
 

@@ -1,25 +1,19 @@
 -- ============================================
--- OpenQuire Database Schema & Security Setup
+-- Migration 001: Workspaces, Pages, Tags
 -- ============================================
 -- Run this SQL in your Supabase SQL Editor
+-- Migrates from flat notes → workspaces + nested pages + tags
 -- ============================================
 
--- Enable UUID extension (usually enabled by default)
+-- Ensure UUID extension is available
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create a trigger function to automatically update updated_at
-CREATE OR REPLACE FUNCTION handle_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- Reuse the existing handle_updated_at() trigger function
+-- (already created in schema.sql)
 
 -- ============================================
--- Workspaces
+-- 1. Create workspaces table
 -- ============================================
-
 CREATE TABLE IF NOT EXISTS workspaces (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -50,9 +44,8 @@ CREATE TRIGGER handle_workspaces_updated_at
   EXECUTE FUNCTION handle_updated_at();
 
 -- ============================================
--- Pages (nested hierarchy via parent_id)
+-- 2. Create pages table (replaces notes)
 -- ============================================
-
 CREATE TABLE IF NOT EXISTS pages (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
@@ -91,9 +84,8 @@ CREATE TRIGGER handle_pages_updated_at
   EXECUTE FUNCTION handle_updated_at();
 
 -- ============================================
--- Tags
+-- 3. Create tags table
 -- ============================================
-
 CREATE TABLE IF NOT EXISTS tags (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -118,9 +110,8 @@ CREATE POLICY "Users can delete own tags"
   ON tags FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================
--- Page Tags (junction table)
+-- 4. Create page_tags junction table
 -- ============================================
-
 CREATE TABLE IF NOT EXISTS page_tags (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   page_id UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
@@ -151,50 +142,30 @@ CREATE POLICY "Users can delete own page_tags"
   ));
 
 -- ============================================
--- Image Storage Bucket & Security Setup
+-- 5. Migrate existing notes to workspaces + pages
 -- ============================================
 
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'note-images',
-  'note-images',
-  true,
-  5242880,
-  ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-);
+-- Create a default workspace for each user who has notes
+INSERT INTO workspaces (user_id, name)
+SELECT DISTINCT user_id, 'My Workspace'
+FROM notes
+ON CONFLICT DO NOTHING;
 
-CREATE POLICY "Users can upload own images"
-  ON storage.objects
-  FOR INSERT
-  WITH CHECK (
-    bucket_id = 'note-images'
-    AND auth.uid()::text = (storage.foldername(name))[1]
-  );
-
-CREATE POLICY "Public read access for note images"
-  ON storage.objects
-  FOR SELECT
-  USING (bucket_id = 'note-images');
-
-CREATE POLICY "Users can delete own images"
-  ON storage.objects
-  FOR DELETE
-  USING (
-    bucket_id = 'note-images'
-    AND auth.uid()::text = (storage.foldername(name))[1]
-  );
-
-CREATE POLICY "Users can update own images"
-  ON storage.objects
-  FOR UPDATE
-  USING (
-    bucket_id = 'note-images'
-    AND auth.uid()::text = (storage.foldername(name))[1]
-  );
+-- Copy notes into pages under their user's default workspace
+INSERT INTO pages (id, workspace_id, user_id, parent_id, title, content, created_at, updated_at)
+SELECT
+  n.id,
+  w.id,
+  n.user_id,
+  NULL,
+  n.title,
+  n.content,
+  n.created_at,
+  n.updated_at
+FROM notes n
+JOIN workspaces w ON w.user_id = n.user_id;
 
 -- ============================================
--- Verification Queries (run these to test)
+-- 6. Drop notes table (uncomment after verifying)
 -- ============================================
--- SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';
--- SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
--- FROM pg_policies WHERE tablename IN ('workspaces', 'pages', 'tags', 'page_tags');
+-- DROP TABLE IF EXISTS notes CASCADE;
