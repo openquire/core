@@ -6,6 +6,9 @@
 - **Page Icons**: Set emoji icons on pages via an inline emoji picker in the page tree
 - **Workspace Rename**: Rename workspaces inline from the workspace selector dropdown
 
+### Fixed
+- Added `cursor-pointer` to all clickable overlay elements (sidebar backdrop, workspace dropdown backdrop)
+
 ## [0.2.0] - 2026-02-26
 
 ### Added
