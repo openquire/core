@@ -531,7 +531,19 @@ export default function MarkdownEditor({ page: note, onSave, userId, onRemoveTag
 
   const handleInput = () => {
     if (!editorRef.current) return;
+    
+    // Preserve scroll position before state update
+    const scrollContainer = editorRef.current.parentElement;
+    const scrollTop = scrollContainer?.scrollTop;
+    
     setContent(editorRef.current.innerHTML);
+
+    // Restore scroll position after state update
+    if (scrollContainer && scrollTop !== undefined) {
+      requestAnimationFrame(() => {
+        scrollContainer.scrollTop = scrollTop;
+      });
+    }
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
