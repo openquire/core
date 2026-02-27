@@ -157,9 +157,24 @@ export default function MarkdownEditor({ page: note, onSave, userId, onRemoveTag
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return null;
     const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
     const editorRect = editorRef.current?.getBoundingClientRect();
     if (!editorRect) return null;
+
+    // For collapsed ranges (cursor position), getBoundingClientRect() returns zeros
+    // We need to insert a temporary element to get accurate coordinates
+    if (range.collapsed) {
+      const span = document.createElement('span');
+      span.textContent = '\u200B'; // Zero-width space
+      range.insertNode(span);
+      const rect = span.getBoundingClientRect();
+      span.remove();
+      return {
+        top: rect.bottom - editorRect.top + 5,
+        left: rect.left - editorRect.left,
+      };
+    }
+
+    const rect = range.getBoundingClientRect();
     return {
       top: rect.bottom - editorRect.top + 5,
       left: rect.left - editorRect.left,
